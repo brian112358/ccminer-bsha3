@@ -246,16 +246,17 @@ extern "C" int scanhash_x16s(int thr_id, struct work* work, uint32_t max_nonce, 
 		}
 		gpulog(LOG_INFO, thr_id, "Intensity set to %g, %u cuda threads", throughput2intensity(throughput), throughput);
 
-		quark_blake512_cpu_init(thr_id, throughput);
-		quark_bmw512_cpu_init(thr_id, throughput);
+		//quark_blake512_cpu_init(thr_id, throughput); // Redundant
+		//quark_bmw512_cpu_init(thr_id, throughput); // Redundant
 		quark_groestl512_cpu_init(thr_id, throughput);
-		quark_skein512_cpu_init(thr_id, throughput);
-		quark_jh512_cpu_init(thr_id, throughput);
+		//quark_skein512_cpu_init(thr_id, throughput); // Redundant
+		//quark_jh512_cpu_init(thr_id, throughput); // Redundant
 		quark_keccak512_cpu_init(thr_id, throughput);
 		x11_shavite512_cpu_init(thr_id, throughput);
 		x11_simd512_cpu_init(thr_id, throughput); // 64
 		x13_hamsi512_cpu_init(thr_id, throughput);
-		x16_echo512_cuda_init(thr_id, throughput);
+		// not needed because shavite already calls aes_cpu_init
+		// x16_echo512_cuda_init(thr_id, throughput);
 		x16_fugue512_cpu_init(thr_id, throughput);
 		x15_whirlpool_cpu_init(thr_id, throughput, 0);
 		x16_whirlpool512_init(thr_id, throughput);
