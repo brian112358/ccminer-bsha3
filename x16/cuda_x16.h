@@ -51,9 +51,12 @@ void x16_shabal512_cuda_hash_80(int thr_id, const uint32_t threads, const uint32
 void x16_simd512_setBlock_80(void *pdata);
 void x16_simd512_cuda_hash_80(int thr_id, const uint32_t threads, const uint32_t startNonce, uint32_t *d_hash);
 
-void x16_echo512_cuda_init(int thr_id, const uint32_t threads);
-void x16_echo512_setBlock_80(void *pdata);
-void x16_echo512_cuda_hash_80(int thr_id, const uint32_t threads, const uint32_t startNonce, uint32_t *d_hash);
+// void x16_echo512_cuda_init(int thr_id, const uint32_t threads);
+// void x16_echo512_setBlock_80(void *pdata);
+// void x16_echo512_cuda_hash_80(int thr_id, const uint32_t threads, const uint32_t startNonce, uint32_t *d_hash);
+
+extern void x11_echo512_setBlock_80_alexis(void *endiandata);
+extern void x11_echo512_cpu_hash_80_alexis(int thr_id, uint32_t threads, const uint32_t startNonce, uint32_t *d_hash);
 
 extern void x13_hamsi512_cpu_init(int thr_id, uint32_t threads);
 void x16_hamsi512_setBlock_80(void *pdata);

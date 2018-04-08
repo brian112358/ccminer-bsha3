@@ -447,3 +447,81 @@ void x11_echo512_cpu_hash_64_alexis(int thr_id, uint32_t threads, uint32_t *d_ha
 
 	x11_echo512_gpu_hash_64_alexis<<<grid, block>>>(threads, d_hash);
 }
+
+__constant__ static uint32_t c_PaddedMessage80[20];
+
+__global__ __launch_bounds__(128, 5) /* will force 80 registers */
+static void x11_echo512_gpu_hash_80_alexis(uint32_t threads, uint32_t startNonce, uint32_t *g_hash)
+{
+	__shared__ uint32_t sharedMemory[4][256];
+
+	aes_gpu_init128(sharedMemory);
+
+	const uint32_t thread = (blockDim.x * blockIdx.x + threadIdx.x);
+	uint32_t k0;
+	uint32_t h[29];
+	if (thread < threads){
+
+		uint32_t *Hash = &g_hash[thread<<4];
+
+		*(uint2x4*)&h[0] = __ldg4((uint2x4*)&c_PaddedMessage80[0]);
+		*(uint2x4*)&h[8] = __ldg4((uint2x4*)&c_PaddedMessage80[8]);
+		*(uint2*)&h[16] = __ldg((uint2*)&c_PaddedMessage80[16]);
+		h[18] = c_PaddedMessage80[18];
+		h[19] = cuda_swab32(startNonce + thread);
+		h[20] = 0x80;
+		h[21] = h[22] = h[23] = h[24] = h[25] = h[26] = 0;
+		h[27] = 0x2000000;
+		h[28] = 0x280;
+
+		__syncthreads();
+
+		k0 = 640;
+
+		uint32_t W[64];
+
+		#pragma unroll 8
+		for (int i = 0; i < 32; i+=4) {
+			W[i] = 512; // L
+			W[i+1] = 0; // H
+			W[i+2] = 0; // X
+			W[i+3] = 0;
+		}
+
+		uint32_t Z[16];
+		#pragma unroll
+		for (int i = 0;  i<16; i++) Z[i] = W[i];
+		#pragma unroll
+		for (int i = 32; i<61; i++) W[i] = h[i - 32];
+		#pragma unroll
+		for (int i = 61; i<64; i++) W[i] = 0;
+
+		for (int k = 0; k < 10; k++)
+			echo_round_alexis(sharedMemory,W,k0);
+
+		#pragma unroll 16
+		for (int i = 0; i < 16; i++) {
+			Z[i] ^= h[i] ^ W[i] ^ W[i + 32];
+		}
+
+		*(uint2x4*)&Hash[0] = *(uint2x4*)&Z[0];
+		*(uint2x4*)&Hash[8] = *(uint2x4*)&Z[8];
+	}
+}
+
+__host__
+void x11_echo512_setBlock_80_alexis(void *endiandata)
+{
+	cudaMemcpyToSymbol(c_PaddedMessage80, endiandata, sizeof(c_PaddedMessage80), 0, cudaMemcpyHostToDevice);
+}
+
+__host__
+void x11_echo512_cpu_hash_80_alexis(int thr_id, uint32_t threads, const uint32_t startNonce, uint32_t *d_hash){
+
+	const uint32_t threadsperblock = 128;
+
+	dim3 grid((threads + threadsperblock-1)/threadsperblock);
+	dim3 block(threadsperblock);
+
+	x11_echo512_gpu_hash_80_alexis<<<grid, block>>>(threads, startNonce, d_hash);
+}
