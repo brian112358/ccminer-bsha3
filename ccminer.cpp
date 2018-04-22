@@ -1396,6 +1396,8 @@ static bool gbt_work_decode_full(const json_t *val, struct work *work)
 		/* BIP 34: height in coinbase */
 		for (n = work->height; n; n >>= 8)
 			cbtx[cbtx_size++] = n & 0xff;
+		if((cbtx[cbtx_size-1] & 0x80))
+			cbtx[cbtx_size++] = 0x00;
 		cbtx[42] = cbtx_size - 43;
 		cbtx[41] = cbtx_size - 42; /* scriptsig length */
 		le32enc((uint32_t *)(cbtx + cbtx_size), 0xffffffff); /* sequence */
@@ -3272,7 +3274,8 @@ longpoll_retry:
 			soval = json_object_get(json_object_get(val, "result"), "submitold");
 			submit_old = soval ? json_is_true(soval) : false;
 			pthread_mutex_lock(&g_work_lock);
-			if (work_decode(json_object_get(val, "result"), &g_work)) {
+			if ((allow_gbt && gbt_work_decode_full(json_object_get(val, "result"), &g_work)) ||
+				(!allow_gbt && work_decode(json_object_get(val, "result"), &g_work))) {
 				restart_threads();
 				if (!opt_quiet) {
 					char netinfo[64] = { 0 };
