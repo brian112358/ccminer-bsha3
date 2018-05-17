@@ -881,10 +881,10 @@ int share_result(int result, int pooln, double sharediff, const char *reason)
 		sprintf(solved, " solved: %u", p->solved_count);
 	}
 
-	applog(LOG_NOTICE, "accepted: %lu/%lu (%s), %s %s%s",
+	applog(LOG_NOTICE, "accepted: %lu/%lu (%s, ping %u ms), %s %s%s",
 			p->accepted_count,
 			p->accepted_count + p->rejected_count,
-			suppl, s, flag, solved);
+			suppl, stratum.answer_msec, s, flag, solved);
 	if (reason) {
 		applog(LOG_WARNING, "reject reason: %s", reason);
 		if (!check_dups && strncasecmp(reason, "duplicate", 9) == 0) {
