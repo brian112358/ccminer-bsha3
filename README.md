@@ -17,7 +17,7 @@ brianmct / brian112358 (developer of Nevermore miner)
 
 - BTC: 1FHLroBZaB74QvQW5mBmAxCNVJNXa14mH5
 
-- RVN: RWoSZX6j6WU6SVTVq5hKmdgPmmrYE9be5R
+- RVN: RBrianMCTM1xdRF5dMgKC2vB8DdNXn57WP
 
 - ETH: 0x7255ba772ee18bdb8b9af0bdeae2e41f5874fb0b
 
