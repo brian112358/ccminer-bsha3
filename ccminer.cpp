@@ -45,6 +45,7 @@
 #include "algos.h"
 #include "sia/sia-rpc.h"
 #include "crypto/xmr-rpc.h"
+#include "sph/sph_keccak.h"
 #include "equi/equihash.h"
 #include "donate.h"
 
@@ -57,7 +58,7 @@
 BOOL WINAPI ConsoleHandler(DWORD);
 #endif
 
-#define PROGRAM_NAME		"nevermore"
+#define PROGRAM_NAME		"ccminer-bsha3"
 #define LP_SCANTIME		60
 #define HEAVYCOIN_BLKHDR_SZ		84
 #define MNR_BLKHDR_SZ 80
@@ -125,7 +126,7 @@ int gpu_threads = 1;
 int64_t opt_affinity = -1L;
 int opt_priority = 0;
 static double opt_difficulty = 1.;
-bool opt_extranonce = true;
+bool opt_extranonce = false;
 bool opt_trust_pool = false;
 uint16_t opt_vote = 9999;
 int num_cpus;
@@ -1259,6 +1260,21 @@ int varint_encode(unsigned char *p, uint64_t n)
 	return 9;
 }
 
+void sha3d(void *state, const void *input, int len)
+{
+	uint32_t _ALIGN(64) buffer[16], hash[16];
+	sph_keccak_context ctx_keccak;
+
+	sph_keccak256_init(&ctx_keccak);
+	sph_keccak256 (&ctx_keccak, input, len);
+	sph_keccak256_close(&ctx_keccak, (void*) buffer);
+	sph_keccak256_init(&ctx_keccak);
+	sph_keccak256 (&ctx_keccak, buffer, 32);
+	sph_keccak256_close(&ctx_keccak, (void*) hash);
+
+	memcpy(state, hash, 32);
+}
+
 static bool gbt_work_decode_full(const json_t *val, struct work *work)
 {
 	int i, n;
@@ -1993,9 +2009,11 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 			heavycoin_hash(merkle_root, sctx->job.coinbase, (int)sctx->job.coinbase_size);
 			break;
 #endif
+		case ALGO_KECCAK:
+			sha3d(merkle_root, sctx->job.coinbase, (int)sctx->job.coinbase_size);
+			break;
 		case ALGO_FUGUE256:
 		case ALGO_GROESTL:
-		case ALGO_KECCAK:
 		case ALGO_BLAKECOIN:
 		case ALGO_WHIRLCOIN:
 			SHA256((uchar*)sctx->job.coinbase, sctx->job.coinbase_size, (uchar*)merkle_root);
@@ -2142,13 +2160,13 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 		case ALGO_X16S:
 			work_set_target(work, sctx->job.diff / (256.0 * opt_difficulty));
 			break;
-		case ALGO_KECCAK:
 		case ALGO_LYRA2:
 			work_set_target(work, sctx->job.diff / (128.0 * opt_difficulty));
 			break;
 		case ALGO_EQUIHASH:
 			equi_work_set_target(work, sctx->job.diff / opt_difficulty);
 			break;
+		case ALGO_KECCAK:
 		default:
 			work_set_target(work, sctx->job.diff / opt_difficulty);
 	}
@@ -4506,7 +4524,7 @@ int main(int argc, char *argv[])
 	// get opt_quiet early
 	parse_single_opt('q', argc, argv);
 
-	printf("*** nevermore " PACKAGE_VERSION " for nVidia GPUs by brian112358@github ***\n");
+	printf("*** ccminer-bsha3 " PACKAGE_VERSION " for nVidia GPUs by brian112358@github ***\n");
 	if (!opt_quiet) {
 		const char* arch = is_x64() ? "64-bits" : "32-bits";
 #ifdef _MSC_VER

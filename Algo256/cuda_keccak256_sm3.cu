@@ -186,9 +186,16 @@ void keccak256_sm3_gpu_hash_80(uint32_t threads, uint32_t startNounce, uint32_t 
 
 		keccak_gpu_state[9]= vectorize(c_PaddedMessage80[9]);
 		keccak_gpu_state[9].y = cuda_swab32(nounce);
-		keccak_gpu_state[10] = make_uint2(1, 0);
+		keccak_gpu_state[10] = make_uint2(0x6, 0);
 		keccak_gpu_state[16] = make_uint2(0, 0x80000000);
 
+		keccak_blockv35(keccak_gpu_state,keccak_round_constants);
+		// Output is 256 bits = 32 bytes. So, only keep the first 32 bytes
+		for (int i = 4; i<25; i++) {
+			keccak_gpu_state[i] = make_uint2(0, 0);
+		}
+		keccak_gpu_state[4]  = make_uint2(0x6, 0);
+		keccak_gpu_state[16] = make_uint2(0, 0x80000000);
 		keccak_blockv35(keccak_gpu_state,keccak_round_constants);
 		if (devectorize(keccak_gpu_state[3]) <= ((uint64_t*)pTarget)[3]) {resNounce[0] = nounce;}
 #else

@@ -30,11 +30,14 @@ extern void keccak256_sm3_hash_80(int thr_id, uint32_t threads, uint32_t startNo
 // CPU Hash
 extern "C" void keccak256_hash(void *state, const void *input)
 {
-	uint32_t _ALIGN(64) hash[16];
+	uint32_t _ALIGN(64) buffer[16], hash[16];
 	sph_keccak_context ctx_keccak;
 
 	sph_keccak256_init(&ctx_keccak);
 	sph_keccak256 (&ctx_keccak, input, 80);
+	sph_keccak256_close(&ctx_keccak, (void*) buffer);
+	sph_keccak256_init(&ctx_keccak);
+	sph_keccak256 (&ctx_keccak, buffer, 32);
 	sph_keccak256_close(&ctx_keccak, (void*) hash);
 
 	memcpy(state, hash, 32);
@@ -72,7 +75,7 @@ extern "C" int scanhash_keccak256(int thr_id, struct work* work, uint32_t max_no
 			CUDA_LOG_ERROR();
 		}
 		cuda_get_arch(thr_id);
-		use_compat_kernels[thr_id] = (cuda_arch[dev_id] < 500);
+		use_compat_kernels[thr_id] = true; // (cuda_arch[dev_id] < 500);
 
 		if(!use_compat_kernels[thr_id]) {
 			keccak256_cpu_init(thr_id);

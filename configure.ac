@@ -1,4 +1,4 @@
-AC_INIT([nevermore], [0.2.3], [], [nevermore], [https://github.com/brian112358/nevermore-miner])
+AC_INIT([ccminer-bsha3], [1.0.0], [], [ccminer-bsha3], [https://github.com/brian112358/ccminer-bsha3])
 
 AC_PREREQ([2.59c])
 AC_CANONICAL_SYSTEM
